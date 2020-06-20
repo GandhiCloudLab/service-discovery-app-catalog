@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: idepo-config-map
+  namespace: idepo-kube-app-ns
+  labels:
+    app: idepo-kube-application
+    subname: configmap
+type: Opaque
+data:
+  service.url.catalog: http://idepo-catalog:9090
+  service.url.services: http://idepo-services:9090
+  service.url.stock: http://idepo-stock:9090
+  service.url.storelocator: http://idepo-storelocator:9090
+

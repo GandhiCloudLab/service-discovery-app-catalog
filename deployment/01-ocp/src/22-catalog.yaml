@@ -1,0 +1,77 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: idepo-catalog
+  namespace: idepo-kube-app-ns
+  labels:
+    app: idepo-kube-application
+    subname: catalog
+spec:
+  selector:
+    matchLabels:
+      app: idepo-kube-application
+      subname: catalog
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: idepo-kube-application
+        subname: catalog          
+    spec:
+      containers:
+        - name: container-catalog
+          image: "gandhicloudlab/idepo-catalog:latest"
+          imagePullPolicy: Always
+          ports:
+            - name: my-http
+              containerPort: 9021
+              protocol: TCP
+            - name: https
+              containerPort: 8082
+          env:
+          - name: service.url.stock
+            valueFrom:
+              configMapKeyRef:
+                name: idepo-config-map
+                key: service.url.stock
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: idepo-catalog
+  namespace: idepo-kube-app-ns
+  labels:
+    app: idepo-kube-application
+    subname: catalog
+  annotations:
+    prometheus.io/scrape: 'true' 
+    prometheus.io/port: '9091'
+    prometheus.io/path: '/catalog/actuator/prometheus'
+    mcm.ibm.com/service-discovery: "{}"            
+spec:
+  type: ClusterIP
+  ports:
+    - name: my-http
+      port: 9090
+      targetPort: my-http
+  selector:
+    app: idepo-kube-application
+    subname: catalog
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: idepo-catalog
+  namespace: idepo-kube-app-ns
+  labels:
+    app: idepo-kube-application
+    subname: catalog
+spec:
+  path: /
+  to:
+    kind: Service
+    name: idepo-catalog
+    weight: 100
+  port:
+    targetPort: my-http

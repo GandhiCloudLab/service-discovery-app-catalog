@@ -1,0 +1,71 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: idepo-storelocator
+  namespace: idepo-kube-app-ns
+  labels:
+    app: idepo-kube-application
+    subname: storelocator
+spec:
+  selector:
+    matchLabels:
+      app: idepo-kube-application
+      subname: storelocator
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: idepo-kube-application
+        subname: storelocator          
+    spec:
+      containers:
+        - name: container-storelocator
+          image: "gandhicloudlab/idepo-storelocator:latest"
+          imagePullPolicy: Always
+          ports:
+            - name: my-http
+              containerPort: 9024
+              protocol: TCP
+            - name: https
+              containerPort: 8082
+          env:
+            - name: GET_HOSTS_FROM
+              value: dns
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: idepo-storelocator
+  namespace: idepo-kube-app-ns
+  labels:
+    app: idepo-kube-application
+    subname: storelocator
+  annotations:
+    mcm.ibm.com/service-discovery: "{}"            
+spec:
+  type: ClusterIP
+  ports:
+    - name: my-http
+      port: 9090
+      targetPort: my-http
+  selector:
+    app: idepo-kube-application
+    subname: storelocator
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: idepo-storelocator
+  namespace: idepo-kube-app-ns
+  labels:
+    app: idepo-kube-application
+    subname: storelocator
+spec:
+  path: /
+  to:
+    kind: Service
+    name: idepo-storelocator
+    weight: 100
+  port:
+    targetPort: my-http

@@ -1,0 +1,71 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: idepo-services
+  namespace: idepo-kube-app-ns
+  labels:
+    app: idepo-kube-application
+    subname: services
+spec:
+  selector:
+    matchLabels:
+      app: idepo-kube-application
+      subname: services
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: idepo-kube-application
+        subname: services          
+    spec:
+      containers:
+        - name: container-services
+          image: "gandhicloudlab/idepo-services:latest"
+          imagePullPolicy: Always
+          ports:
+            - name: my-http
+              containerPort: 9022
+              protocol: TCP
+            - name: https
+              containerPort: 8082
+          env:
+          - name: GET_HOSTS_FROM
+            value: dns
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: idepo-services
+  namespace: idepo-kube-app-ns
+  labels:
+    app: idepo-kube-application
+    subname: services
+  annotations:
+    mcm.ibm.com/service-discovery: "{}"            
+spec:
+  type: ClusterIP
+  ports:
+    - name: my-http
+      port: 9090
+      targetPort: my-http
+  selector:
+    app: idepo-kube-application
+    subname: services
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: idepo-services
+  namespace: idepo-kube-app-ns
+  labels:
+    app: idepo-kube-application
+    subname: services
+spec:
+  path: /
+  to:
+    kind: Service
+    name: idepo-services
+    weight: 100
+  port:
+    targetPort: my-http

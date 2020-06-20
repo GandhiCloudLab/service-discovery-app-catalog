@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: idepo-frontweb
+  namespace: idepo-kube-app-ns
+  labels:
+    app: idepo-kube-application
+    subname: frontweb
+spec:
+  selector:
+    matchLabels:
+      app: idepo-kube-application
+      subname: frontweb
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: idepo-kube-application
+        subname: frontweb
+    spec:
+      containers:
+        - name: container-web
+          image: "gandhicloudlab/idepo-frontweb:latest"
+          imagePullPolicy: Always
+          ports:
+            - name: my-http
+              containerPort: 9020
+              protocol: TCP
+            - name: https
+              containerPort: 8082
+          env:
+          - name: service.url.catalog
+            valueFrom:
+              configMapKeyRef:
+                name: idepo-config-map
+                key: service.url.catalog
+          - name: service.url.services
+            valueFrom:
+              configMapKeyRef:
+                name: idepo-config-map
+                key: service.url.services                
+          - name: service.url.stock
+            valueFrom:
+              configMapKeyRef:
+                name: idepo-config-map
+                key: service.url.stock
+          - name: service.url.storelocator
+            valueFrom:
+              configMapKeyRef:
+                name: idepo-config-map
+                key: service.url.storelocator 
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: idepo-frontweb
+  namespace: idepo-kube-app-ns
+  labels:
+    app: idepo-kube-application
+    subname: frontweb
+  annotations:
+    mcm.ibm.com/service-discovery: "{}"
+spec:
+  type: ClusterIP
+  ports:
+    - name: my-http
+      port: 9090
+      targetPort: my-http
+  selector:
+    app: idepo-kube-application
+    subname: frontweb
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: idepo-frontweb
+  namespace: idepo-kube-app-ns
+  labels:
+    app: idepo-kube-application
+    subname: frontweb
+spec:
+  path: /
+  to:
+    kind: Service
+    name: idepo-frontweb
+    weight: 100
+  port:
+    targetPort: my-http
